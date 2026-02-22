@@ -1,54 +1,32 @@
-"""
-server.py
-
-Flask server for EmotionDetection application.
-Exposes /emotion_detector endpoint to analyze emotions from text.
-"""
-
-import json
-from flask import Flask, request, jsonify
-from EmotionDetection import emotion_detector
+from flask import Flask, render_template, request
+from EmotionDetection.emotion_detection import emotion_detector
 
 app = Flask(__name__)
 
+@app.route("/")
+def render_index_page():
+    return render_template('index.html')
 
-@app.route('/emotion_detector', methods=['POST'])
-def emotion_detector_endpoint():
-    """
-    Flask endpoint to analyze emotions of provided text.
-    Accepts POST JSON with "text" field.
-    Returns JSON with emotion scores and dominant emotion.
-    """
-    data = request.get_json()
-    text = data.get("text", "")
+@app.route("/emotionDetector")
+def emotion_detector_route():
+    text_to_analyze = request.args.get('textToAnalyze')
 
-    result_json = emotion_detector(text)
-    result_dict = json.loads(result_json)
+    response = emotion_detector(text_to_analyze)
 
-    # check for dominant emotion
-    dominant_emotion = (
-        max(result_dict, key=result_dict.get)
-        if all(v is not None for v in result_dict.values())
-        else None
-    )
+    if response['dominant_emotion'] is None:
+        return "Invalid text! Please try again!"
 
-    if dominant_emotion is None:
-        return jsonify({"result": "Invalid text! Please try again!", "details": result_dict}), 400
-
-    result_dict["dominant_emotion"] = dominant_emotion
-
-    response_str = (
+    formatted_response = (
         f"For the given statement, the system response is "
-        f"'anger': {result_dict.get('anger', 0)}, "
-        f"'disgust': {result_dict.get('disgust', 0)}, "
-        f"'fear': {result_dict.get('fear', 0)}, "
-        f"'joy': {result_dict.get('joy', 0)}, "
-        f"and 'sadness': {result_dict.get('sadness', 0)}. "
-        f"The dominant emotion is {dominant_emotion}."
+        f"'anger': {response['anger']}, "
+        f"'disgust': {response['disgust']}, "
+        f"'fear': {response['fear']}, "
+        f"'joy': {response['joy']}, "
+        f"and 'sadness': {response['sadness']}. "
+        f"The dominant emotion is {response['dominant_emotion']}."
     )
 
-    return jsonify({"result": response_str, "details": result_dict})
-
+    return formatted_response
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000)
