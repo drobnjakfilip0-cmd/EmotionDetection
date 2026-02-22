@@ -1,27 +1,37 @@
-@app.route('/emotionDetector', methods=['POST'])
-def emotionDetector():
-    data = request.get_json()
-    text = data.get("text", "")
-    
-    result_json = emotion_detector(text)
-    result_dict = json.loads(result_json)
-    
-    # proveri dominantnu emociju
-    dominant_emotion = max(result_dict, key=result_dict.get) if all(v is not None for v in result_dict.values()) else None
-    
-    if dominant_emotion is None:
-        return jsonify({"result": "Invalid text! Please try again!", "details": result_dict}), 400
-    
-    result_dict["dominant_emotion"] = dominant_emotion
-    
-    response_str = (
+from flask import Flask, request
+from EmotionDetection.emotion_detection import emotion_detector
+import json
+
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "Emotion Detection API is running!"
+
+@app.route("/emotionDetector")
+def emotion_detector_route():
+    text = request.args.get('text')
+
+    # call emotion detector
+    response = emotion_detector(text)
+    response_dict = json.loads(response)
+
+    # EXACT blank input handling
+    if response_dict['dominant_emotion'] is None:
+        return "Invalid text! Please try again!"
+
+    # formatted output
+    result = (
         f"For the given statement, the system response is "
-        f"'anger': {result_dict.get('anger',0)}, "
-        f"'disgust': {result_dict.get('disgust',0)}, "
-        f"'fear': {result_dict.get('fear',0)}, "
-        f"'joy': {result_dict.get('joy',0)}, "
-        f"and 'sadness': {result_dict.get('sadness',0)}. "
-        f"The dominant emotion is {dominant_emotion}."
+        f"'anger': {response_dict['anger']}, "
+        f"'disgust': {response_dict['disgust']}, "
+        f"'fear': {response_dict['fear']}, "
+        f"'joy': {response_dict['joy']}, "
+        f"and 'sadness': {response_dict['sadness']}. "
+        f"The dominant emotion is {response_dict['dominant_emotion']}."
     )
-    
-    return jsonify({"result": response_str, "details": result_dict})
+
+    return result
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)
