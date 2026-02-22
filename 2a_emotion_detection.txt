@@ -1,0 +1,23 @@
+import requests
+import json
+
+URL = "https://sn-watson-emotion.labs.skills.network/v1/watson.runtime.nlp.v1/NlpService/EmotionPredict" 
+HEADERS = {"grpc-metadata-mm-model-id": "emotion_aggregated-workflow_lang_en_stock"}
+
+def emotion_detector(text_to_analyse):
+    if not text_to_analyse or not isinstance(text_to_analyse, str):
+        return {"error": "Invalid input"}
+    
+    payload = {
+        "raw_document": {
+            "text": text_to_analyse
+        }
+    }
+    try:
+        response = requests.post(URL, json=payload, headers=HEADERS)
+        raw_text = response.text
+        return json.loads(raw_text)
+
+    except Exception as e:
+        print("Exception:", e)
+        return {"error": "Service unavailable"}
