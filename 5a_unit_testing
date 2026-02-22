@@ -1,0 +1,29 @@
+import unittest
+from EmotionDetection import emotion_detector
+import json
+
+class TestEmotionDetector(unittest.TestCase):
+    
+    def test_emotions(self):
+        test_cases = [
+            ("I am glad this happened", "joy"),
+            ("I am really mad about this", "anger"),
+            ("I feel disgusted just hearing about this", "disgust"),
+            ("I am so sad about this", "sadness"),
+            ("I am really afraid that this will happen", "fear"),
+        ]
+        
+        for text, expected_emotion in test_cases:
+            with self.subTest(text=text):
+                result_json = emotion_detector(text)
+                try:
+                    result_dict = json.loads(result_json)
+                except Exception as e:
+                    self.fail(f"Failed to parse JSON for input '{text}': {e}")
+                
+                # dominantna emocija
+                dominant_emotion = max(result_dict, key=result_dict.get)
+                self.assertEqual(dominant_emotion, expected_emotion, f"Text: '{text}'")
+
+if __name__ == "__main__":
+    unittest.main()
